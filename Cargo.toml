@@ -1,0 +1,8 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "crates/texforge-cli",
+    "crates/texforge-server",
+    "crates/texforge-core",
+]
