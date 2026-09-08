@@ -1,14 +1,28 @@
-use std::net::SocketAddr;
+use std::{env, net::SocketAddr, path::PathBuf};
+
+use anyhow::Context;
 
 #[derive(Clone, Debug)]
 pub struct ServerConfig {
     pub bind_addr: SocketAddr,
+    pub project_root: PathBuf,
 }
 
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
             bind_addr: SocketAddr::from(([127, 0, 0, 1], 3000)),
+            project_root: PathBuf::from("."),
         }
+    }
+}
+
+impl ServerConfig {
+    pub fn from_env() -> anyhow::Result<Self> {
+        let mut config = Self::default();
+        config.project_root = env::var_os("TEXFORGE_PROJECT_ROOT")
+            .map(PathBuf::from)
+            .unwrap_or(env::current_dir().context("failed to determine current directory")?);
+        Ok(config)
     }
 }
