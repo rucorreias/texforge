@@ -95,6 +95,7 @@ mod tests {
 
         let config = ServerConfig {
             bind_addr: "127.0.0.1:0".parse().unwrap(),
+            frontend_url: "http://127.0.0.1:5173".to_owned(),
             project_root: temp_dir.path().to_path_buf(),
         };
         let app = router(AppState::new(&config).unwrap());

@@ -5,16 +5,22 @@ pub mod state;
 
 use config::ServerConfig;
 
-pub async fn run(config: ServerConfig) -> anyhow::Result<()> {
+pub async fn start(config: ServerConfig) -> anyhow::Result<tokio::task::JoinHandle<anyhow::Result<()>>> {
     let app = routes::router(state::AppState::new(&config)?);
     let listener = tokio::net::TcpListener::bind(config.bind_addr).await?;
 
     tracing::info!(
-        address = %config.bind_addr,
+        address = %config.url(),
         project_root = %config.project_root.display(),
         "TexForge server is running"
     );
 
-    axum::serve(listener, app).await?;
+    Ok(tokio::spawn(async move {
+        axum::serve(listener, app).await.map_err(anyhow::Error::from)
+    }))
+}
+
+pub async fn run(config: ServerConfig) -> anyhow::Result<()> {
+    start(config).await?.await??;
     Ok(())
 }
