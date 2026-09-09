@@ -107,7 +107,7 @@
 }
 
 .menu-checkbox input {
-  accent-color: #b9d47a;
+  accent-color: #527a72;
 }
 
 .compact-layout .workspace {
@@ -214,6 +214,12 @@
 .file-row-button.selected {
   background: #23403d;
   color: #f0f6ef;
+}
+
+.file-row-button.generated-row:hover,
+.file-row-button.generated-row.selected {
+  background: #51472b;
+  color: #f0e7c5;
 }
 
 .entry-icon {

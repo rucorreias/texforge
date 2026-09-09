@@ -5,7 +5,7 @@ type FileExplorerProps = {
   selectedPath: string | null
   isLoading: boolean
   showGenerated: boolean
-  onSelect: (path: string) => void
+  onSelect: (path: string, readOnly: boolean) => void
 }
 
 const generatedExtensions = [
@@ -25,7 +25,7 @@ const generatedExtensions = [
   '.toc',
 ]
 
-function isGeneratedFile(path: string) {
+export function isGeneratedFile(path: string) {
   return generatedExtensions.some((extension) => path.endsWith(extension))
 }
 
@@ -82,24 +82,12 @@ export function FileExplorer({
             </>
           )
 
-          if (generated) {
-            return (
-              <div
-                className={className}
-                key={entry.path}
-                style={{ paddingLeft: `${16 + depth * 16}px` }}
-              >
-                {fileContent}
-              </div>
-            )
-          }
-
           return (
             <button
               className={className}
               key={entry.path}
               type="button"
-              onClick={() => onSelect(entry.path)}
+              onClick={() => onSelect(entry.path, generated)}
               style={{ paddingLeft: `${16 + depth * 16}px` }}
             >
               {fileContent}

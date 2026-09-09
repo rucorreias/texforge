@@ -9,6 +9,7 @@ type EditorProps = {
   onChange: (content: string) => void
   onSave: () => void
   textareaRef: RefObject<HTMLTextAreaElement | null>
+  readOnly: boolean
 }
 
 export function Editor({
@@ -20,6 +21,7 @@ export function Editor({
   onChange,
   onSave,
   textareaRef,
+  readOnly,
 }: EditorProps) {
   return (
     <section className="editor-panel">
@@ -34,7 +36,7 @@ export function Editor({
           <button
             type="button"
             className="save-button"
-            disabled={!path || isLoading}
+            disabled={!path || isLoading || readOnly}
             onClick={onSave}
           >
             Save
@@ -49,6 +51,7 @@ export function Editor({
             ref={textareaRef}
             aria-label={path ? `Editing ${path}` : 'Editor'}
             disabled={!path}
+            readOnly={readOnly}
             value={content}
             onChange={(event) => onChange(event.target.value)}
             spellCheck={false}

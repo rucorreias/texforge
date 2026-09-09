@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import { Editor } from './components/Editor'
-import { FileExplorer } from './components/FileExplorer'
+import { FileExplorer, isGeneratedFile } from './components/FileExplorer'
 import { MenuBar } from './components/MenuBar'
 import { getFile, getFiles, saveFile, type FileEntry } from './lib/api'
 
@@ -15,6 +15,7 @@ function App() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const [showGenerated, setShowGenerated] = useState(false)
   const [compactLayout, setCompactLayout] = useState(false)
+  const [isReadOnly, setIsReadOnly] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   useEffect(() => {
@@ -29,9 +30,9 @@ function App() {
       setEntries(files)
       if (selectFirstFile) {
         const firstFile = files.find((entry) => entry.type === 'file')
-        if (firstFile) await selectFile(firstFile.path)
+        if (firstFile) await selectFile(firstFile.path, isGeneratedFile(firstFile.path))
       } else if (selectedPath && files.some((entry) => entry.path === selectedPath)) {
-        await selectFile(selectedPath)
+        await selectFile(selectedPath, isGeneratedFile(selectedPath))
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Failed to load files')
@@ -40,8 +41,9 @@ function App() {
     }
   }
 
-  async function selectFile(path: string) {
+  async function selectFile(path: string, readOnly: boolean) {
     setSelectedPath(path)
+    setIsReadOnly(readOnly)
     setIsLoadingFile(true)
     setSaveMessage(null)
     setError(null)
@@ -89,7 +91,7 @@ function App() {
     <main className={`ide-shell${compactLayout ? ' compact-layout' : ''}`}>
       <header className="topbar">
         <MenuBar
-          canSave={Boolean(selectedPath) && !isLoadingFile}
+          canSave={Boolean(selectedPath) && !isLoadingFile && !isReadOnly}
           showGenerated={showGenerated}
           compactLayout={compactLayout}
           onSave={handleSave}
@@ -119,6 +121,7 @@ function App() {
           onChange={setContent}
           onSave={handleSave}
           textareaRef={textareaRef}
+          readOnly={isReadOnly}
         />
       </div>
     </main>

@@ -19,10 +19,22 @@ impl Default for ServerConfig {
 
 impl ServerConfig {
     pub fn from_env() -> anyhow::Result<Self> {
-        let mut config = Self::default();
-        config.project_root = env::var_os("TEXFORGE_PROJECT_ROOT")
+        let project_root = env::var_os("TEXFORGE_PROJECT_ROOT")
             .map(PathBuf::from)
             .unwrap_or(env::current_dir().context("failed to determine current directory")?);
-        Ok(config)
+        Self::from_project_root(project_root)
+    }
+
+    pub fn from_project_root(project_root: PathBuf) -> anyhow::Result<Self> {
+        let project_root = std::fs::canonicalize(&project_root)
+            .with_context(|| format!("failed to resolve project root: {}", project_root.display()))?;
+        if !project_root.is_dir() {
+            anyhow::bail!("project root is not a directory: {}", project_root.display());
+        }
+
+        Ok(Self {
+            project_root,
+            ..Self::default()
+        })
     }
 }

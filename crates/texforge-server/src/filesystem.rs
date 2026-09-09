@@ -125,33 +125,29 @@ fn validate_relative_path(path: &str) -> Result<PathBuf, FilesystemError> {
 mod tests {
     use super::*;
 
-    fn test_filesystem() -> (ProjectFilesystem, PathBuf) {
-        let root = std::env::temp_dir().join(format!("texforge-filesystem-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&root);
+    fn test_filesystem() -> (ProjectFilesystem, tempfile::TempDir) {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let root = temp_dir.path();
         fs::create_dir_all(root.join("chapters")).unwrap();
         fs::write(root.join("main.tex"), "main").unwrap();
-        (ProjectFilesystem::new(&root).unwrap(), root)
+        (ProjectFilesystem::new(root).unwrap(), temp_dir)
     }
-
-    fn cleanup(root: &Path) { fs::remove_dir_all(root).unwrap(); }
 
     #[test]
     fn lists_files_reads_and_writes() {
-        let (filesystem, root) = test_filesystem();
+        let (filesystem, temp_dir) = test_filesystem();
         let entries = filesystem.list().unwrap();
         assert!(entries.iter().any(|entry| entry.path == "main.tex"));
         assert!(entries.iter().any(|entry| entry.path == "chapters"));
         assert_eq!(filesystem.read_file("main.tex").unwrap(), "main");
         filesystem.write_file("main.tex", "updated").unwrap();
-        assert_eq!(fs::read_to_string(root.join("main.tex")).unwrap(), "updated");
-        cleanup(&root);
+        assert_eq!(fs::read_to_string(temp_dir.path().join("main.tex")).unwrap(), "updated");
     }
 
     #[test]
     fn rejects_traversal_and_absolute_paths() {
-        let (filesystem, root) = test_filesystem();
+        let (filesystem, _temp_dir) = test_filesystem();
         assert!(matches!(filesystem.read_file("../outside.tex"), Err(FilesystemError::InvalidPath)));
         assert!(matches!(filesystem.write_file("/tmp/outside.tex", "x"), Err(FilesystemError::InvalidPath)));
-        cleanup(&root);
     }
 }

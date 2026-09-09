@@ -1,27 +1,22 @@
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use std::path::PathBuf;
+use texforge_server::{config::ServerConfig, run};
 
 #[derive(Parser)]
 #[command(name = "texforge")]
 #[command(about = "A local-first LaTeX IDE")]
 struct Cli {
-    #[command(subcommand)]
-    command: Option<Commands>,
-
     #[arg(default_value = ".")]
     path: PathBuf,
 }
 
-#[derive(Subcommand)]
-enum Commands {
-    Init,
-    Build,
-    Watch,
-}
-
-fn main() {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+    let config = ServerConfig::from_project_root(cli.path)?;
 
-    println!("TexForge");
-    println!("Project: {}", cli.path.display());
+    println!("TexForge project: {}", config.project_root.display());
+    println!("Server: http://{}", config.bind_addr);
+
+    run(config).await
 }
