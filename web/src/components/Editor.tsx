@@ -1,3 +1,5 @@
+import type { RefObject } from 'react'
+
 type EditorProps = {
   path: string | null
   content: string
@@ -6,6 +8,7 @@ type EditorProps = {
   error: string | null
   onChange: (content: string) => void
   onSave: () => void
+  textareaRef: RefObject<HTMLTextAreaElement | null>
 }
 
 export function Editor({
@@ -16,6 +19,7 @@ export function Editor({
   error,
   onChange,
   onSave,
+  textareaRef,
 }: EditorProps) {
   return (
     <section className="editor-panel">
@@ -42,6 +46,7 @@ export function Editor({
           <p className="empty-state">Loading file...</p>
         ) : (
           <textarea
+            ref={textareaRef}
             aria-label={path ? `Editing ${path}` : 'Editor'}
             disabled={!path}
             value={content}

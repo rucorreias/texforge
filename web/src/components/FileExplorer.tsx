@@ -4,29 +4,62 @@ type FileExplorerProps = {
   entries: FileEntry[]
   selectedPath: string | null
   isLoading: boolean
+  showGenerated: boolean
   onSelect: (path: string) => void
+}
+
+const generatedExtensions = [
+  '.aux',
+  '.bbl',
+  '.bcf',
+  '.blg',
+  '.fdb_latexmk',
+  '.fls',
+  '.lof',
+  '.log',
+  '.lot',
+  '.out',
+  '.pdf',
+  '.run.xml',
+  '.synctex.gz',
+  '.toc',
+]
+
+function isGeneratedFile(path: string) {
+  return generatedExtensions.some((extension) => path.endsWith(extension))
 }
 
 export function FileExplorer({
   entries,
   selectedPath,
   isLoading,
+  showGenerated,
   onSelect,
 }: FileExplorerProps) {
+  const visibleEntries = entries.filter(
+    (entry) => entry.type === 'directory' || showGenerated || !isGeneratedFile(entry.path),
+  )
+  const visibleFileCount = visibleEntries.filter((entry) => entry.type === 'file').length
+
   return (
     <aside className="file-explorer">
       <div className="panel-heading">
-        <span className="panel-label">Project files</span>
-        <span className="file-count">{entries.length}</span>
+        <div>
+          <span className="panel-label">Project files</span>
+          <span className="file-count">{visibleFileCount}</span>
+        </div>
       </div>
       <div className="file-list" aria-label="Project files">
         {isLoading && <p className="empty-state">Loading files...</p>}
-        {!isLoading && entries.length === 0 && (
-          <p className="empty-state">No files found</p>
+        {!isLoading && visibleEntries.length === 0 && (
+          <p className="empty-state">
+            {showGenerated ? 'No files found' : 'No editable files found'}
+          </p>
         )}
-        {entries.map((entry) => {
+        {visibleEntries.map((entry) => {
           const depth = entry.path.split('/').length - 1
           const isSelected = entry.path === selectedPath
+          const generated = isGeneratedFile(entry.path)
 
           if (entry.type === 'directory') {
             return (
@@ -41,16 +74,35 @@ export function FileExplorer({
             )
           }
 
+          const className = `file-row file-row-button${isSelected ? ' selected' : ''}${generated ? ' generated-row' : ''}`
+          const fileContent = (
+            <>
+              <span className="entry-icon file-icon" aria-hidden="true">T</span>
+              <span>{entry.name}</span>
+            </>
+          )
+
+          if (generated) {
+            return (
+              <div
+                className={className}
+                key={entry.path}
+                style={{ paddingLeft: `${16 + depth * 16}px` }}
+              >
+                {fileContent}
+              </div>
+            )
+          }
+
           return (
             <button
-              className={`file-row file-row-button${isSelected ? ' selected' : ''}`}
+              className={className}
               key={entry.path}
               type="button"
               onClick={() => onSelect(entry.path)}
               style={{ paddingLeft: `${16 + depth * 16}px` }}
             >
-              <span className="entry-icon file-icon" aria-hidden="true">T</span>
-              <span>{entry.name}</span>
+              {fileContent}
             </button>
           )
         })}

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import { Editor } from './components/Editor'
 import { FileExplorer } from './components/FileExplorer'
+import { MenuBar } from './components/MenuBar'
 import { getFile, getFiles, saveFile, type FileEntry } from './lib/api'
 
 function App() {
@@ -12,23 +13,32 @@ function App() {
   const [isLoadingFile, setIsLoadingFile] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
+  const [showGenerated, setShowGenerated] = useState(false)
+  const [compactLayout, setCompactLayout] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   useEffect(() => {
-    async function loadFiles() {
-      try {
-        const files = await getFiles()
-        setEntries(files)
+    void loadFiles(true)
+  }, [])
+
+  async function loadFiles(selectFirstFile = false) {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const files = await getFiles()
+      setEntries(files)
+      if (selectFirstFile) {
         const firstFile = files.find((entry) => entry.type === 'file')
         if (firstFile) await selectFile(firstFile.path)
-      } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : 'Failed to load files')
-      } finally {
-        setIsLoading(false)
+      } else if (selectedPath && files.some((entry) => entry.path === selectedPath)) {
+        await selectFile(selectedPath)
       }
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Failed to load files')
+    } finally {
+      setIsLoading(false)
     }
-
-    void loadFiles()
-  }, [])
+  }
 
   async function selectFile(path: string) {
     setSelectedPath(path)
@@ -60,12 +70,36 @@ function App() {
     }
   }
 
+  function handleUndo() {
+    textareaRef.current?.focus()
+    document.execCommand('undo')
+  }
+
+  function handleRedo() {
+    textareaRef.current?.focus()
+    document.execCommand('redo')
+  }
+
+  function handleSelectAll() {
+    textareaRef.current?.focus()
+    textareaRef.current?.select()
+  }
+
   return (
-    <main className="ide-shell">
+    <main className={`ide-shell${compactLayout ? ' compact-layout' : ''}`}>
       <header className="topbar">
-        <div>
-          <h1>TexForge</h1>
-        </div>
+        <MenuBar
+          canSave={Boolean(selectedPath) && !isLoadingFile}
+          showGenerated={showGenerated}
+          compactLayout={compactLayout}
+          onSave={handleSave}
+          onReload={() => void loadFiles()}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onSelectAll={handleSelectAll}
+          onShowGeneratedChange={setShowGenerated}
+          onCompactLayoutChange={setCompactLayout}
+        />
       </header>
 
       <div className="workspace">
@@ -73,6 +107,7 @@ function App() {
           entries={entries}
           selectedPath={selectedPath}
           isLoading={isLoading}
+          showGenerated={showGenerated}
           onSelect={selectFile}
         />
         <Editor
@@ -83,6 +118,7 @@ function App() {
           error={error}
           onChange={setContent}
           onSave={handleSave}
+          textareaRef={textareaRef}
         />
       </div>
     </main>
